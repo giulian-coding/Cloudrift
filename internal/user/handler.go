@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"uuid"
 
-	"gitthub.com/giulian-coding/cloudrift/internal/platform/httpx"
+	"github.com/giulian-coding/cloudrift/internal/platform/httpx"
 )
 
 type Handler struct {
@@ -38,7 +39,13 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID := r.PathValue("id")
 
-	user, err := h.svc.Get(ctx, userID)
+	safeID, err := uuid.Parse(userID)
+	if err != nil {
+		httpx.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	user, err := h.svc.Get(ctx, safeID.String())
 	if errors.Is(err, ErrNotFound) {
 		httpx.Error(w, http.StatusNotFound, ErrNotFound.Error())
 		return
@@ -62,11 +69,11 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	user, err := h.svc.Create(ctx, req)
-	if errors.Is(err, ErrNameRequired) {
-		httpx.Error(w, http.StatusBadRequest, ErrNameRequired.Error())
-		return
-	}
 	if err != nil {
+		if errors.Is(err, ErrNameRequired) {
+			httpx.Error(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		httpx.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}

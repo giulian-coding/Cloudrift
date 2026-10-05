@@ -1,3 +1,3 @@
-module gitthub.com/giulian-coding/cloudrift
+module github.com/giulian-coding/cloudrift
 
 go 1.27.1
